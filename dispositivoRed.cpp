@@ -2,6 +2,7 @@
 
 using namespace std;
 
-DispositivoRed:: DispositivoRed (string direccionIp, double anchoBandaMbps):  direccionIp(direccionIp), anchoBandaMbps(anchoBandaMbps){
+DispositivoRed:: DispositivoRed (std::string direccionIp, std::string direccionMAC, bool estadoOperativo) : direccionIp(direccionIp), 
+direccionMAC(direccionMAC), estadoOperativo(estadoOperativo) {
 }
 

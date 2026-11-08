@@ -8,9 +8,10 @@ using namespace std;
 class DispositivoRed{
 protected:
     string direccionIp;
-    double anchoBandaMbps;
+    std::string direccionMAC;
+    bool estadoOperativo;
 public:
-    DispositivoRed (string direccionIp, double anchoBandaMbps);
+    DispositivoRed (std::string direccionIp, std::string direccionMAC, bool estadoOperativo);
     
     void LecturaIp() {  
         if (this->direccionIp.empty()) {
