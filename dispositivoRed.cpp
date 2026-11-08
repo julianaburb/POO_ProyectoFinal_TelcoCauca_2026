@@ -1,7 +1,10 @@
-#include "dispositivoRed.h"
+#include "DispositivoRed.h"
 
 using namespace std;
 
-DispositivoRed:: DispositivoRed (string direccionIp, double anchoBandaMbps):  direccionIp(direccionIp), anchoBandaMbps(anchoBandaMbps){
+DispositivoRed::DispositivoRed (string direccionIP, double anchoBandaMbps)
+    : direccionIP(direccionIP), anchoBandaMbps(anchoBandaMbps){
 }
 
+string DispositivoRed::getDireccionIP() const {
+    return direccionIP; }

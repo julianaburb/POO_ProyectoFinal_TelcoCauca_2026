@@ -1,15 +1,15 @@
-// MODULO 3.2 - SUBCLASE CONCRETA: GatewayLoRa
 #ifndef GATEWAYLORA_H
 #define GATEWAYLORA_H
 
 #include "DispositivoComunicacion.h"
 
 class GatewayLoRa : public DispositivoComunicacion {
-private:
-    float frecuenciaMHz;
 public:
-    GatewayLoRa(const std::string& _id, float _freq);
+    explicit GatewayLoRa(const std::string& iP);
+    ~GatewayLoRa() override = default;
+
     void transmitir() override;
+    std::string serializar() const override;
 };
 
-#endif
+#endif 

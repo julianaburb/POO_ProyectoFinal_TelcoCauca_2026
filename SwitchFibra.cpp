@@ -1,14 +1,13 @@
 #include "SwitchFibra.h"
-#include "Registro.h"
-#include <thread>
-#include <chrono>
+#include <iostream>
 
-SwitchFibra::SwitchFibra(const std::string& _id, int _velocidad)
-    : DispositivoComunicacion(_id, "Switch Fibra Optica"), velocidadGbps(_velocidad) {}
+SwitchFibra::SwitchFibra(const std::string& iP)
+    : DispositivoComunicacion(iP) {}
 
 void SwitchFibra::transmitir() {
-    // Logica de conmutacion optica de alta velocidad
-    registrarEventoSeguro(tipo + " " + id + " conmutando trafico optico a "
-                          + std::to_string(velocidadGbps) + " Gbps");
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    std::cout << "[SwitchFibra] Conmutando paquetes ópticos desde IP: " << iP << std::endl;
+}
+
+std::string SwitchFibra::serializar() const {
+    return "SWITCHFIBRA|ID-FIBRA|" + iP + "|OK";
 }

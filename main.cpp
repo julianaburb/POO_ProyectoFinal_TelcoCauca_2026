@@ -91,4 +91,5 @@ int main() {
     // aca ya solo queda el hilo principal, por eso el cout va sin mutex
     std::cout << "Sistema finalizado correctamente." << std::endl;
     return 0;
+    
 }
