@@ -1,8 +1,8 @@
 #ifndef EXCEPCIONNODORED_H
 #define EXCEPCIONNODORED_H
 
-#include <string>
 #include <stdexcept>
+#include <string>
 
 class ExcepcionNodoRed : public std::runtime_error {
     public:
