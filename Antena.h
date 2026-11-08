@@ -3,21 +3,25 @@
 
 #include <string>
 #include <iostream>
-#include "Tecnico.h"
+
+class Tecnico; 
 
 class Antena {
 private:
     int idAntena;
     double frecuenciaMHz;
     std::string tecnologia; // ej: "4G", "5G"
-    Tecnico* responsable;   // Asociación 1:1 con Técnico
+    Tecnico* responsableMantenimiento;   // Asociación 1:1 con Técnico
 
 public:
-    Antena(int _id, double _freq, std::string _tec);
-    void asignarTecnico(Tecnico* t);
+    Antena(int _id, double _freq, const std::string& _tec);
+    void asignarResponsable(Tecnico* t);
     void mostrarDetalles() const;
     std::string getTecnologia() const;
-    void reemplazarTecnico(Tecnico* antiguo, Tecnico* nuevo);
+    int getIdAntena() const { return idAntena; }
+    double getFrecuenciaMHz() const { return frecuenciaMHz; }
+
+    ~Antena();
 };
 
 #endif
