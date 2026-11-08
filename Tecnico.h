@@ -4,15 +4,19 @@
 #include <iostream>
 class Tecnico {
 private:
-int id;
+int idTecnico;
 std::string nombre;
 std::string especialidad;
-bool enTurno;
 
 public:
-Tecnico(int _id, std::string _nombre, std::string _esp, bool enTurno);
+Tecnico(int _id, const std::string &_nombre, const std::string &_esp);
 void mostrarInformacion() const;
-std::string getNombre() const { return nombre; }
-bool getEnTurno () const {return enTurno; }
+int getIdTecnico() const {return idTecnico;}
+std::string getNombre() const { return nombre;}
+std::string getEspecialidad ()const {return especialidad;}
+void setIdTecnico (int nuevoIdTecnico);
+void setNombre (const std::string &nuevoNombre);
+void setEspecialidad (const std::string &nuevaEspecialidad);
+
 };
 #endif
