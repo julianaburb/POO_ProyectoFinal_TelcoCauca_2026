@@ -13,6 +13,7 @@ public:
     explicit DispositivoComunicacion(const string& iP);
     virtual ~DispositivoComunicacion() = default; //el destructor
     virtual void transmitir() = 0; // el mtd qque debo heredar para routerwifi, gateway y swichfibra
+    std::string getIp() const;
 };
 
 #endif
