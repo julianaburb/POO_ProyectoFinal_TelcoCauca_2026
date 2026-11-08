@@ -3,22 +3,23 @@
 
 #include <string>
 #include <vector>
-#include <iostream>
+
 
 class Antena;
 
 class Torre {
 private:
-    std::string idTorre;
+    int idTorre;
     std::string ubicacion;
     double alturaMetros;
     std::vector<Antena*> listaAntenas; // Asociación 1:N
 
 public:
-    Torre(std::string _id, std::string _ubic, double _alt);
+    Torre(int _id, const std::string& _ubic, double _alt);
     void agregarAntena(Antena* a);
     void mostrarReporteTorre() const;
     int contarAntenas5G() const;
+    ~Torre();
 };
 
 #endif
