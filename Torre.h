@@ -4,7 +4,8 @@
 #include <string>
 #include <vector>
 #include <iostream>
-#include "Antena.h"
+
+class Antena;
 
 class Torre {
 private:

@@ -1,5 +1,6 @@
 #include "Torre.h"
 #include <iostream>
+#include "Antena.h"
 
 Torre::Torre(std::string _id, std::string _ubic, double _alt)
     : idTorre(_id), ubicacion(_ubic), alturaMetros(_alt) {}
