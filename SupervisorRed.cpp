@@ -13,10 +13,9 @@ void SupervisorRed::supervisar(DispositivoComunicacion* dev, int& transmisionesE
             throw ExcepcionNodoRed("Falla de IP: Dirección IP vacía o no configurada en el dispositivo.");
         } //IP inválida o vacía (Lanza ExcepcionNodoRed)
 
-        dev->transmitir(); //la vaina esa polimorfica
-
         {
             std::lock_guard<std::mutex> lock(mtxConsola);
+            dev->transmitir(); //la vaina esa polimorfica
             std::cout << "[TRAMA SERIALIZADA]: " << dev->serializar() << std::endl;
             transmisionesExitosas++;
         }  // Secciones críticas protegidas por RAII 
@@ -25,13 +24,13 @@ void SupervisorRed::supervisar(DispositivoComunicacion* dev, int& transmisionesE
     catch (const ExcepcionNodoRed& e) {
         std::lock_guard<std::mutex> lock(mtxConsola);
         std::cerr << "[EXCEPCION NODO RED CAPTURADA EN HILO]: " << e.what() << std::endl;
-    }
+        }
     catch (const std::invalid_argument& e) {
         std::lock_guard<std::mutex> lock(mtxConsola);
         std::cerr << "[INVALID ARGUMENT CAPTURADO EN HILO]: " << e.what() << std::endl;
-    }
+        }
     catch (const std::exception& e) {
         std::lock_guard<std::mutex> lock(mtxConsola);
         std::cerr << "[EXCEPCION GENERICA EN HILO]: " << e.what() << std::endl;
-    }
+        
 }
