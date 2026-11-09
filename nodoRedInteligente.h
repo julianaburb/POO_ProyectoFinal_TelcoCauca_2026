@@ -1,6 +1,5 @@
 #ifndef NODOREDINTELIGENTE_H 
 #define NODOREDINTELIGENTE_H 
-using namespace std;
 #include "dispositivoRed.h"
 #include "sensorIot.h"
 
@@ -12,12 +11,11 @@ private:
     double cargaProcesamiento;
 public:
     NodoRedInteligente (std::string direccionIp, std::string direccionMAC, bool estadoOperativo, string tipoSensor, double valorLectura, int idNodo, int paquetesProcesados, double cargaProcesamiento);
-    NodoRedInteligente operator+(const NodoRedInteligente& nodo) const;
+    NodoRedInteligente operator+(const NodoRedInteligente& otro) const;
     friend std::ostream& operator<<(std::ostream& os, const NodoRedInteligente& n) {
         os << "ID del nodo es: " << n.idNodo <<endl;
-        return os;    
-    string getDireccionIP() const {
-    return direccionIP; }
+        return os;
+    }    
 };
 #endif
 

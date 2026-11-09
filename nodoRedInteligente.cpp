@@ -9,13 +9,8 @@ NodoRedInteligente :: NodoRedInteligente(string direccionIp, std::string direcci
         this-> paquetesProcesados = paquetesProcesados;
         this-> cargaProcesamiento = cargaProcesamiento;
 }
-//NodoRedInteligente NodoRedInteligente:: operator+(const NodoRedInteligente& nodo) const {
-  //      if(this->direccionIp != nodo.direccionIp) {
-    //            throw ExcepcionNodoRed("DIRECCIONES IP NO COMPATIBLES");
-      //  }
-        //int totalPaquetes= this->paquetesProcesados + nodo.paquetesProcesados;
-        //double promedio= totalPaquetes/2;
-      //  int combinarIdentificadores = (this->idNodo *100) + nodo.idNodo;
-      //  return NodoRedInteligente(this->direccionIp, this->anchoBandaMbps, this->tipoSensor, promedio, combinarIdentificadores, totalPaquetes);
-// }
-    //this siempre sera el de la izquierda y el q es paso por referencia siempre sera el de la derecha
+NodoRedInteligente NodoRedInteligente:: operator+(const NodoRedInteligente& otro) const {
+    NodoRedInteligente resultado(*this);
+    resultado.cargaProcesamiento = cargaProcesamiento + otro.cargaProcesamiento;
+    return resultado;
+ } //this siempre sera el de la izquierda y el q es paso por referencia siempre sera el de la derecha
