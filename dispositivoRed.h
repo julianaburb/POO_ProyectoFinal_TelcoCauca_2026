@@ -9,11 +9,11 @@ using namespace std;
 
 class DispositivoRed{
 protected:
-    string direccionIP;
-    double anchoBandaMbps;
+    std::string direccionIP;
+    std::string direccionMAC;
+    bool estadoOperativo;
 public:
-    DispositivoRed (string direccionIP, double anchoBandaMbps);
-    
+    DispositivoRed (std::string direccionIP, std::string direccionMAC, bool estadoOperativo);
     string getDireccionIP() const;
 
     void LecturaIp() {  

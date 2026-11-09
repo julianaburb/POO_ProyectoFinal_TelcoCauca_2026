@@ -9,8 +9,9 @@ class NodoRedInteligente: public DispositivoRed, public SensorIot {
 private:
     int idNodo;
     int paquetesProcesados;
+    double cargaProcesamiento;
 public:
-    NodoRedInteligente (string direccionIp, double anchoBandaMbps, string tipoSensor, double valorLectura, int idNodo, int paquetesProcesados);
+    NodoRedInteligente (std::string direccionIp, std::string direccionMAC, bool estadoOperativo, string tipoSensor, double valorLectura, int idNodo, int paquetesProcesados, double cargaProcesamiento);
     NodoRedInteligente operator+(const NodoRedInteligente& nodo) const;
     friend std::ostream& operator<<(std::ostream& os, const NodoRedInteligente& n) {
         os << "ID del nodo es: " << n.idNodo <<endl;
