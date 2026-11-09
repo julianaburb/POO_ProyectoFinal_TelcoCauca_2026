@@ -5,27 +5,23 @@
 
 void SupervisorRed::supervisar(DispositivoComunicacion* dev, int& transmisionesExitosas) {
     try {
-        // Guarda 1: Puntero nulo
         if (dev == nullptr) {
             throw std::invalid_argument("Puntero nulo detectado en el contenedor polimórfico.");
-        }
+        } //el Puntero nulo
 
-        // Guarda 2: IP inválida o vacía (Lanza ExcepcionNodoRed)
         if (dev->getIp().empty() || dev->getIp() == "0.0.0.0") {
             throw ExcepcionNodoRed("Falla de IP: Dirección IP vacía o no configurada en el dispositivo.");
-        }
+        } //IP inválida o vacía (Lanza ExcepcionNodoRed)
 
-        // Ejecución de la transmisión polimórfica
-        dev->transmitir();
+        dev->transmitir(); //la vaina esa polimorfica
 
-        // Secciones críticas protegidas por RAII (std::lock_guard)
         {
             std::lock_guard<std::mutex> lock(mtxConsola);
             std::cout << "[TRAMA SERIALIZADA]: " << dev->serializar() << std::endl;
             transmisionesExitosas++;
-        }
+        }  // Secciones críticas protegidas por RAII 
     }
-    // Captura en orden jerárquico: de lo específico a lo general
+    // las capturas orden jerárquico, espf a gen
     catch (const ExcepcionNodoRed& e) {
         std::lock_guard<std::mutex> lock(mtxConsola);
         std::cerr << "[EXCEPCION NODO RED CAPTURADA EN HILO]: " << e.what() << std::endl;
