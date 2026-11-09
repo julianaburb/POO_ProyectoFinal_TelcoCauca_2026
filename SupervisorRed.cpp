@@ -34,3 +34,4 @@ void SupervisorRed::supervisar(DispositivoComunicacion* dev, int& transmisionesE
         std::cerr << "[EXCEPCION GENERICA EN HILO]: " << e.what() << std::endl;
         
 }
+}

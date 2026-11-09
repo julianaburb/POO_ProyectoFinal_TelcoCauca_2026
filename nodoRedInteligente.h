@@ -15,8 +15,9 @@ public:
     NodoRedInteligente operator+(const NodoRedInteligente& nodo) const;
     friend std::ostream& operator<<(std::ostream& os, const NodoRedInteligente& n) {
         os << "ID del nodo es: " << n.idNodo <<endl;
-        return os;
-    }
+        return os;    
+    string getDireccionIP() const {
+    return direccionIP; }
 };
 #endif
 
