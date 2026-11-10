@@ -40,7 +40,7 @@ void ServidorCentral::iniciar() {
         socketEscucha = INVALID_SOCKET;
         throw std::runtime_error("Fallo en paso: listen()");
     }// 5. Poner el socket en modo escucha (listen)
-
+0
     std::cout << "[ServidorCentral] Servidor TCP iniciado correctamente en el puerto " << PUERTO_TCP << std::endl;
 }
 
