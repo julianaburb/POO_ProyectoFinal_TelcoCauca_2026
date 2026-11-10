@@ -1,31 +1,141 @@
-// MODULO 3.5 - ORQUESTACION, SINCRONIZACION Y MEMORIA
+// PROYECTO INTEGRADOR TELCOCAUCA - MAIN FINAL
+// Todo se ejecuta de corrido y separado por partes, una por cada modulo de la guia.
 #include <iostream>
 #include <string>
 #include <vector>
 #include <thread>
+#include <chrono>
 #include <functional>   // std::ref
 
+// Modulo 1
+#include "Tecnico.h"
+#include "Antena.h"
+#include "Torre.h"
+// Modulo 2
+#include "nodoRedInteligente.h"
+#include "ExcepcionNodoRed.h"
+// Modulo 3
 #include "DispositivoComunicacion.h"
 #include "RouterWiFi.h"
 #include "GatewayLoRa.h"
 #include "SwitchFibra.h"
-#include "TareaTransmision.h"
+// Modulo 4
+#include "SupervisorRed.h"
 #include "EventoIngenieria2027.h"
 #include "Registro.h"
+// Modulo 5
+#include "ServidorCentral.h"
+#include "ClienteTCP.h"
+#include "TelemetriaUDP.h"
 
 int main() {
-    // 1. Vector heterogeneo de dispositivos en el Heap
-    // se guardan punteros y no objetos para que no haya slicing
+    // ===================== PARTE 1: INFRAESTRUCTURA FISICA =====================
+    std::cout << "\n==================== PARTE 1: INFRAESTRUCTURA FISICA ====================\n";
+
+    Tecnico tecnico1(1, "Carlos Munoz", "Radiofrecuencia");
+    Tecnico tecnico2(2, "Laura Gomez", "Fibra optica");
+
+    Antena antena1(101, 3500.0, "5G");
+    Antena antena2(102, 1900.0, "4G");
+    Antena antena3(103, 3700.0, "5G");
+
+    // Asociacion 1:1 -> cada antena tiene un tecnico responsable
+    antena1.asignarResponsable(&tecnico1);
+    antena2.asignarResponsable(&tecnico2);
+    antena3.asignarResponsable(&tecnico1);
+
+    // Asociacion 1:N -> una torre guarda varias antenas en un std::vector<Antena*>
+    Torre torre(1, "Popayan - Cerro de las Tres Cruces", 45.0);
+    torre.agregarAntena(&antena1);
+    torre.agregarAntena(&antena2);
+    torre.agregarAntena(&antena3);
+
+    tecnico1.mostrarInformacion();
+    tecnico2.mostrarInformacion();
+    torre.mostrarReporteTorre();
+
+    // ===================== PARTE 2: NODO DE RED INTELIGENTE =====================
+    std::cout << "\n==================== PARTE 2: NODO DE RED INTELIGENTE ====================\n";
+
+    // Primero dos nodos validos. Van en un try porque el constructor puede lanzar ExcepcionNodoRed.
+    try {
+        NodoRedInteligente n1("192.168.1.20", "AA:BB:CC:DD:EE:01", true, "Temperatura", 35.5, 1, 120, 40.0);
+        NodoRedInteligente n2("192.168.1.21", "AA:BB:CC:DD:EE:02", true, "Humedad",     60.0, 2,  80, 25.5);
+
+        // operador << sobrecargado como funcion amiga
+        std::cout << "\n> Nodo 1:\n" << n1;
+        std::cout << "\n> Nodo 2:\n" << n2;
+
+        // operador + : suma la carga de procesamiento (40 + 25.5 = 65.5)
+        NodoRedInteligente suma = n1 + n2;
+        std::cout << "\n> Resultado de n1 + n2 (carga sumada):\n" << suma;
+    }
+    catch (const ExcepcionNodoRed& e) {
+        std::cout << "[ExcepcionNodoRed] " << e.what() << std::endl;
+    }
+    catch (const std::exception& e) {
+        std::cout << "[Error general] " << e.what() << std::endl;
+    }
+
+    // Errores forzados que pide la guia: lectura fuera de rango e IP vacia.
+    // Cada uno en su propio try para que el primero no impida mostrar el segundo.
+    std::cout << "\n> Error forzado 1: lectura fuera de rango (120)\n";
+    try {
+        NodoRedInteligente malo1("192.168.1.30", "AA:BB:CC:DD:EE:03", true, "Temperatura", 120.0, 3, 50, 10.0);
+    }
+    catch (const ExcepcionNodoRed& e) {   // primero la especifica
+        std::cout << "[ExcepcionNodoRed capturada] " << e.what() << std::endl;
+    }
+    catch (const std::exception& e) {     // despues la general
+        std::cout << "[Error general] " << e.what() << std::endl;
+    }
+
+    std::cout << "\n> Error forzado 2: direccion IP vacia\n";
+    try {
+        NodoRedInteligente malo2("", "AA:BB:CC:DD:EE:04", true, "Humedad", 50.0, 4, 30, 15.0);
+    }
+    catch (const ExcepcionNodoRed& e) {
+        std::cout << "[ExcepcionNodoRed capturada] " << e.what() << std::endl;
+    }
+    catch (const std::exception& e) {
+        std::cout << "[Error general] " << e.what() << std::endl;
+    }
+
+    // ===================== PARTE 3: POLIMORFISMO Y SUPERVISION EN HILOS =====================
+    std::cout << "\n==================== PARTE 3: SUPERVISION POLIMORFICA EN HILOS ====================\n";
+
+    // Vector heterogeneo en el Heap: se guardan punteros y no objetos para que no haya slicing
     std::vector<DispositivoComunicacion*> red;
-    red.push_back(new RouterWiFi("RTR-01", 12));
-    red.push_back(new GatewayLoRa("GW-868", 868.1f));
-    red.push_back(new SwitchFibra("SW-FO-01", 10));
-    red.push_back(nullptr); // Provocacion intencional para probar la guarda defensiva
+    red.push_back(new RouterWiFi("192.168.10.1"));
+    red.push_back(new GatewayLoRa("192.168.10.2"));
+    red.push_back(new SwitchFibra("192.168.10.3"));
+    red.push_back(new RouterWiFi(""));   // Provocacion: IP vacia -> ExcepcionNodoRed dentro del hilo
+    red.push_back(nullptr);              // Provocacion: puntero nulo -> guarda defensiva (invalid_argument)
 
-    // Variable compartida entre hilos (protegida con mtx_contador)
+    // Variable compartida entre hilos (se modifica dentro de la seccion protegida con mutex)
     int transmisionesExitosas = 0;
+    SupervisorRed supervisor;
 
-    // Agenda de eventos 2027 (Modulo 4), tambien en el Heap
+    // Un hilo por dispositivo con la sintaxis de funcion miembro: (&Clase::metodo, &instancia, args)
+    // sin std::ref el hilo trabaja con una copia y el contador del main se queda en 0
+    std::vector<std::thread> hilosSupervision;
+    for (DispositivoComunicacion* dev : red) {
+        hilosSupervision.push_back(std::thread(&SupervisorRed::supervisar, &supervisor, dev,
+                                               std::ref(transmisionesExitosas)));
+    }
+
+    // Sincronizacion obligatoria: si un hilo queda joinable al destruirse, el programa se cae con terminate()
+    for (auto& t : hilosSupervision) {
+        if (t.joinable()) {
+            t.join();
+        }
+    }
+    registrarEventoSeguro("Transmisiones exitosas: " + std::to_string(transmisionesExitosas)
+                          + " de " + std::to_string(red.size()) + " dispositivos");
+
+    // ===================== PARTE 4: EVENTOS DE INGENIERIA 2027 =====================
+    std::cout << "\n==================== PARTE 4: EVENTOS DE INGENIERIA 2027 ====================\n";
+
     std::vector<EventoIngenieria2027*> agenda;
     agenda.push_back(new EventoIngenieria2027(
         "NVIDIA GTC 2027",
@@ -48,35 +158,79 @@ int main() {
 
     int eventosMostrados = 0;
 
-    // 2. Vector de hilos independientes (paso por referencia con std::ref)
-    // sin std::ref el hilo trabaja con una copia y el contador del main se queda en 0
-    std::vector<std::thread> hilos;
-    for (DispositivoComunicacion* dev : red) {
-        hilos.push_back(std::thread(tareaTransmisionHilo, dev, std::ref(transmisionesExitosas)));
-    }
-
-    // Hilo dedicado a la agenda de eventos 2027
-    hilos.push_back(std::thread(procesarAgendaEventos2027, std::ref(agenda), std::ref(eventosMostrados)));
-
-    // 3. Sincronizacion obligatoria de hilos
-    // si un hilo queda joinable cuando se destruye, el programa se cae con terminate()
-    for (auto& t : hilos) {
-        if (t.joinable()) {
-            t.join();
-        }
-    }
-
-    registrarEventoSeguro("Transmisiones exitosas: " + std::to_string(transmisionesExitosas)
-                          + " de " + std::to_string(red.size()) + " dispositivos");
+    // La agenda corre en su propio hilo independiente, como pide la guia
+    std::thread hiloEventos(procesarAgendaEventos2027, std::ref(agenda), std::ref(eventosMostrados));
+    hiloEventos.join();
     registrarEventoSeguro("Eventos 2027 registrados: " + std::to_string(eventosMostrados));
 
-    // 4. Liberacion limpia de memoria dinamica
+    // ===================== PARTE 5: CLIENTE-SERVIDOR TCP =====================
+    std::cout << "\n==================== PARTE 5: CLIENTE-SERVIDOR TCP ====================\n";
+
+    // El servidor va en su propio hilo porque accept() se queda esperando clientes;
+    // si lo llamaramos directo, el programa se bloquearia y los clientes nunca se ejecutarian.
+    std::thread hiloServidor(iniciarServidorTCP);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));   // tiempo para socket, bind y listen
+
+    // 3 clientes (MAX_CLIENTES = 3): cada uno se conecta, manda su trama serializada y espera el ACK
+    try {
+        NodoRedInteligente nodoEstacion("192.168.1.20", "AA:BB:CC:DD:EE:01", true, "Temperatura", 35.5, 1, 120, 40.0);
+        enviarTramaTCP(nodoEstacion.serializar());   // trama del nodo inteligente
+        enviarTramaTCP(red[0]->serializar());        // trama del RouterWiFi (polimorfismo via ITransmisible)
+        enviarTramaTCP(red[1]->serializar());        // trama del GatewayLoRa
+    }
+    catch (const std::exception& e) {
+        std::cout << "[Error cliente TCP] " << e.what() << std::endl;
+    }
+    hiloServidor.join();   // el servidor termina despues de atender a los 3 clientes
+
+    // Error forzado: el servidor ya se apago, asi que el connect debe fallar y capturarse
+    std::cout << "\n> Error forzado: cliente intentando conectarse sin servidor\n";
+    try {
+        enviarTramaTCP("SENSOR|9|192.168.1.99|20");
+    }
+    catch (const std::runtime_error& e) {
+        std::cout << "[runtime_error capturado] " << e.what() << std::endl;
+    }
+
+    // ===================== PARTE 6: TELEMETRIA UDP =====================
+    std::cout << "\n==================== PARTE 6: TELEMETRIA UDP ====================\n";
+
+    // El receptor va en su propio hilo porque recvfrom bloquea mientras espera
+    std::thread hiloReceptor([]() {
+        try { recibirTelemetriaUDP(2); }
+        catch (const ExcepcionRedUDP& e) { std::cout << "[ExcepcionRedUDP] " << e.what() << std::endl; }
+        catch (const std::exception& e)  { std::cout << "[Error general] " << e.what() << std::endl; }
+    });
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));   // tiempo para el bind
+
+    try {
+        NodoRedInteligente sensor1("192.168.1.20", "AA:BB:CC:DD:EE:01", true, "Temperatura", 35.5, 1, 120, 40.0);
+        NodoRedInteligente sensor2("192.168.1.21", "AA:BB:CC:DD:EE:02", true, "Humedad", 60.0, 2, 80, 25.5);
+        enviarTelemetriaUDP(sensor1);
+        enviarTelemetriaUDP(sensor2);
+    }
+    catch (const std::exception& e) {
+        std::cout << "[Error emisor UDP] " << e.what() << std::endl;
+    }
+    hiloReceptor.join();
+
+    // Error forzado: receptor esperando sin que nadie envie -> timeout a los 3 s
+    std::cout << "\n> Error forzado: receptor UDP sin emisor (timeout de 3 s)\n";
+    try {
+        recibirTelemetriaUDP(1);
+    }
+    catch (const ExcepcionRedUDP& e) {
+        std::cout << "[ExcepcionRedUDP capturada] " << e.what() << std::endl;
+    }
+
+    // ===================== LIBERACION DE MEMORIA =====================
+    // va al final porque la Parte 5 todavia usa red[0] y red[1];
     // ya todos los hilos terminaron, entonces aca si se puede borrar sin problema
     for (std::size_t i = 0; i < red.size(); ++i) {
         if (red[i] != nullptr) {
-            delete red[i];
+            delete red[i];   // destructor virtual -> se llama tambien el de la clase hija
         }
-        red[i] = nullptr;   // para no dejar punteros colgantes
+        red[i] = nullptr;    // para no dejar punteros colgantes
     }
     red.clear();
 
@@ -89,7 +243,6 @@ int main() {
     agenda.clear();
 
     // aca ya solo queda el hilo principal, por eso el cout va sin mutex
-    std::cout << "Sistema finalizado correctamente." << std::endl;
+    std::cout << "\nSistema TelcoCauca finalizado correctamente." << std::endl;
     return 0;
-    
 }

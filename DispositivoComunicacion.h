@@ -2,7 +2,7 @@
 #define DISPOSITIVOCOMUNICACION_H
 
 #include <string>
-#include "ITransmisible.h"
+#include "Itransmisible.h"
 
 using namespace std;
 

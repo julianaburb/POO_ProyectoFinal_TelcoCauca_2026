@@ -1,7 +1,6 @@
 #include "nodoRedInteligente.h"
 #include <stdexcept>
 #include "ExcepcionNodoRed.h"
-#include <sstream>
 using namespace std;
 
 NodoRedInteligente :: NodoRedInteligente(string direccionIp, std::string direccionMAC, bool estadoOperativo, string tipoSensor,
@@ -35,8 +34,7 @@ std::ostream& operator<<(std::ostream& os, const NodoRedInteligente& n) {
 
 // Arma la trama con el formato que acordamos: TIPO|ID|IP|VALOR
 // Por la red no se pueden mandar objetos, solo texto, por eso "empaquetamos" el nodo asi.
+// std::to_string convierte los numeros a texto para poder unirlos con +
 std::string NodoRedInteligente::serializar() const {
-    std::ostringstream trama;   // funciona como un cout pero escribe en un string
-    trama << "SENSOR|" << idNodo << "|" << direccionIP << "|" << valorLectura;
-    return trama.str();
+    return "SENSOR|" + std::to_string(idNodo) + "|" + direccionIP + "|" + std::to_string(valorLectura);
 }

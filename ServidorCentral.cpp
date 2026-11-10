@@ -1,6 +1,7 @@
 #include "ServidorCentral.h"
 #include <iostream>
 #include <cstring>
+#include <vector>
 
 ServidorCentral::ServidorCentral() : socketEscucha(INVALID_SOCKET) {}
 
@@ -91,10 +92,28 @@ void ServidorCentral::atenderCliente(SocketType cliente) {
 
         buffer[bytesRecibidos] = '\0'; // Asegurar terminador de cadena
 
+        // Deserializacion: separamos la trama TIPO|ID|IP|VALOR por el caracter '|'
+        // con find (busca la posicion del |) y substr (corta el texto entre dos |)
+        std::string trama(buffer);
+        std::vector<std::string> campos;
+        std::size_t inicio = 0;
+        std::size_t pos = trama.find('|');
+        while (pos != std::string::npos) {
+            campos.push_back(trama.substr(inicio, pos - inicio));
+            inicio = pos + 1;
+            pos = trama.find('|', inicio);
+        }
+        campos.push_back(trama.substr(inicio));   // el ultimo campo no tiene | despues
+        if (campos.size() != 4) {
+            throw std::runtime_error(std::string("Trama mal formada: ") + buffer);
+        }
+
         // Registro protegido de la sección crítica mediante mutex (RAII)
         {
             std::lock_guard<std::mutex> lock(mtxConsolaServidor);
             std::cout << "[SERVIDOR - HILO " << std::this_thread::get_id() << "] Trama recibida: " << buffer << std::endl;
+            std::cout << "      -> Tipo: " << campos[0] << " | ID: " << campos[1]
+                      << " | IP: " << campos[2] << " | Valor: " << campos[3] << std::endl;
         }
 
         // Envío de respuesta ACK de confirmación al cliente

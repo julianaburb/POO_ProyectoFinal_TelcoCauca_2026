@@ -1,5 +1,6 @@
 #include "ConfigRed.h"     // va primero: trae winsock en Windows o sys/socket en Linux
 #include <cstring>
+#include <cerrno>
 #include "TelemetriaUDP.h"
 
 // Codigo del ultimo error de red (en Windows se pide distinto que en Linux)
