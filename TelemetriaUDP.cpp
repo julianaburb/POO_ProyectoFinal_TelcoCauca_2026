@@ -1,105 +1,108 @@
-#include <winsock2.h>      // sockets de Windows (equivale a sys/socket.h de Linux)
-#include <iostream>
+#include "ConfigRed.h"     // va primero: trae winsock en Windows o sys/socket en Linux
 #include <cstring>
 #include "TelemetriaUDP.h"
 
-static const char* IP_DESTINO_UDP = "127.0.0.1";   // este mismo computador
-static const int   PUERTO_TELEMETRIA = 9001;
+// Codigo del ultimo error de red (en Windows se pide distinto que en Linux)
+static int ultimoErrorRed() {
+#ifdef _WIN32
+    return WSAGetLastError();
+#else
+    return errno;
+#endif
+}
 
 // ---------------------------------------------------------------------
-// EMISOR (cliente UDP): no necesita bind ni connect, Windows le asigna
-// un puerto temporal solo. Llenamos la trama y la disparamos con sendto.
+// EMISOR (cliente UDP): sin bind ni connect, solo sendto hacia IP:puerto
 // ---------------------------------------------------------------------
 void enviarTelemetriaUDP(const NodoRedInteligente& nodo) {
-    WSADATA wsa;
-    WSAStartup(MAKEWORD(2, 2), &wsa);
+    iniciarRed();
 
-    SOCKET s = socket(AF_INET, SOCK_DGRAM, 0);   // SOCK_DGRAM = UDP
+    SocketType s = socket(AF_INET, SOCK_DGRAM, 0);   // SOCK_DGRAM = UDP
     if (s == INVALID_SOCKET) {
-        int err = WSAGetLastError();
-        WSACleanup();
+        int err = ultimoErrorRed();
+        finalizarRed();
         throw ExcepcionRedUDP("UDP: no se pudo crear el socket del emisor", err);
     }
 
     sockaddr_in destino{};
     destino.sin_family = AF_INET;
-    destino.sin_port = htons(PUERTO_TELEMETRIA);
-    destino.sin_addr.s_addr = inet_addr(IP_DESTINO_UDP);
+    destino.sin_port = htons(PUERTO_UDP);
+    destino.sin_addr.s_addr = inet_addr(IP_SERVIDOR.c_str());
 
-    // Serializacion binaria: pasamos los datos del objeto a la trama empaquetada
+    // Serializacion binaria: copiamos los datos del objeto a la trama empaquetada
     TramaSensor trama{};
     trama.idNodo = nodo.getIdNodo();
     std::strncpy(trama.tipoSensor, nodo.getTipoSensor().c_str(), sizeof(trama.tipoSensor) - 1);
     trama.valorLectura = (float)nodo.getValorLectura();
     std::strncpy(trama.direccionIP, nodo.getDireccionIP().c_str(), sizeof(trama.direccionIP) - 1);
 
-    // reinterpret_cast: tratamos la trama como un bloque de bytes para enviarla tal cual
     sendto(s, reinterpret_cast<const char*>(&trama), sizeof(trama), 0,
            (sockaddr*)&destino, sizeof(destino));
     std::cout << "[UDP TX] Nodo " << trama.idNodo << " envio " << sizeof(trama)
               << " bytes (" << trama.tipoSensor << ": " << trama.valorLectura << ")" << std::endl;
 
-    closesocket(s);   // en Linux seria close(s)
-    WSACleanup();
+    cerrarSocket(s);
+    finalizarRed();
 }
 
 // ---------------------------------------------------------------------
-// RECEPTOR (servidor UDP): bind es obligatorio para quedarse en el puerto.
-// Le ponemos un timeout de 3 s para que recvfrom no se quede bloqueado
-// para siempre si nadie envia nada (UDP no avisa si el emisor se cayo).
+// RECEPTOR (servidor UDP): bind obligatorio + timeout de 3 s en recvfrom
 // ---------------------------------------------------------------------
 void recibirTelemetriaUDP(int cantidad) {
-    WSADATA wsa;
-    WSAStartup(MAKEWORD(2, 2), &wsa);
+    iniciarRed();
 
-    SOCKET s = socket(AF_INET, SOCK_DGRAM, 0);
+    SocketType s = socket(AF_INET, SOCK_DGRAM, 0);
     if (s == INVALID_SOCKET) {
-        int err = WSAGetLastError();
-        WSACleanup();
+        int err = ultimoErrorRed();
+        finalizarRed();
         throw ExcepcionRedUDP("UDP: no se pudo crear el socket del receptor", err);
     }
 
     sockaddr_in local{};
     local.sin_family = AF_INET;
-    local.sin_port = htons(PUERTO_TELEMETRIA);
+    local.sin_port = htons(PUERTO_UDP);
     local.sin_addr.s_addr = INADDR_ANY;
 
     if (bind(s, (sockaddr*)&local, sizeof(local)) == SOCKET_ERROR) {
-        int err = WSAGetLastError();
-        closesocket(s);
-        WSACleanup();
+        int err = ultimoErrorRed();
+        cerrarSocket(s);
+        finalizarRed();
         throw ExcepcionRedUDP("UDP: fallo el bind, el puerto puede estar ocupado", err);
     }
 
-    // Timeout de 3 segundos (en Windows va en milisegundos)
-    DWORD timeout = 3000;
+    // Timeout de 3 s para que recvfrom no se quede bloqueado para siempre
+#ifdef _WIN32
+    DWORD timeout = 3000;                       // Windows: milisegundos
+#else
+    struct timeval timeout{3, 0};               // Linux: segundos, como en la diapositiva
+#endif
     setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout));
 
-    std::cout << "[UDP RX] Escuchando en el puerto " << PUERTO_TELEMETRIA
+    std::cout << "[UDP RX] Escuchando en el puerto " << PUERTO_UDP
               << " (trama de " << sizeof(TramaSensor) << " bytes)..." << std::endl;
 
     for (int i = 0; i < cantidad; i++) {
         TramaSensor recibida{};
         sockaddr_in remitente{};
+#ifdef _WIN32
         int tam = sizeof(remitente);
-
+#else
+        socklen_t tam = sizeof(remitente);
+#endif
         int bytes = recvfrom(s, reinterpret_cast<char*>(&recibida), sizeof(recibida), 0,
                              (sockaddr*)&remitente, &tam);
         if (bytes == SOCKET_ERROR) {
-            int err = WSAGetLastError();
-            closesocket(s);
-            WSACleanup();
-            if (err == WSAETIMEDOUT)
-                throw ExcepcionRedUDP("TIMEOUT: no se recibio ningun datagrama en 3 s", err);
-            throw ExcepcionRedUDP("Error al recibir con recvfrom", err);
+            int err = ultimoErrorRed();
+            cerrarSocket(s);
+            finalizarRed();
+            throw ExcepcionRedUDP("TIMEOUT o error: no se recibio datagrama en 3 s", err);
         }
-        // Solo aceptamos la trama si llego completa (los 40 bytes)
-        if (bytes == sizeof(TramaSensor)) {
+        if (bytes == sizeof(TramaSensor)) {   // solo si llego completa
             std::cout << "[UDP RX] Nodo " << recibida.idNodo << " | IP " << recibida.direccionIP
                       << " | " << recibida.tipoSensor << ": " << recibida.valorLectura << std::endl;
         }
     }
 
-    closesocket(s);
-    WSACleanup();
+    cerrarSocket(s);
+    finalizarRed();
 }
