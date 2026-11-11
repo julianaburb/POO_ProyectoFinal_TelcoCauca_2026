@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <stdexcept>
 #include <string>
-#include "nodoRedInteligente.h"
+#include "NodoRedInteligente.h"
 
 // Trama binaria que viaja por UDP. Con #pragma pack(push, 1) el compilador
 // no mete bytes de relleno (padding), asi la trama mide exactamente lo que suman

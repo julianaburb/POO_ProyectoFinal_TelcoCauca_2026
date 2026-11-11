@@ -1,4 +1,4 @@
-#include "nodoRedInteligente.h"
+#include "NodoRedInteligente.h"
 #include <stdexcept>
 #include "ExcepcionNodoRed.h"
 using namespace std;

@@ -1,4 +1,4 @@
-#include "dispositivoRed.h"
+#include "DispositivoRed.h"
 #include "ExcepcionNodoRed.h"
 using namespace std;
 

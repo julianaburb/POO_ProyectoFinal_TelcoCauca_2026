@@ -12,7 +12,7 @@
 #include "Antena.h"
 #include "Torre.h"
 // Modulo 2
-#include "nodoRedInteligente.h"
+#include "NodoRedInteligente.h"
 #include "ExcepcionNodoRed.h"
 // Modulo 3
 #include "DispositivoComunicacion.h"

@@ -1,7 +1,7 @@
 #ifndef NODOREDINTELIGENTE_H 
 #define NODOREDINTELIGENTE_H 
-#include "dispositivoRed.h"
-#include "sensorIot.h"
+#include "DispositivoRed.h"
+#include "SensorIot.h"
 
 
 class NodoRedInteligente: public DispositivoRed, public SensorIot {
