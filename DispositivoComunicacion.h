@@ -10,9 +10,9 @@ class DispositivoComunicacion : public ITransmisible {
 protected:
     string iP;
 public:
-    explicit DispositivoComunicacion(const string& iP);
+    explicit DispositivoComunicacion(const string& iP); //No sé qué hace
     virtual ~DispositivoComunicacion() = default; //el destructor
-    virtual void transmitir() = 0; // el mtd qque debo heredar para routerwifi, gateway y swichfibra
+    virtual void transmitir() = 0; // el método que debo heredar para RouterWiFi, gateway y swichfibra
     std::string getIp() const;
 };
 
