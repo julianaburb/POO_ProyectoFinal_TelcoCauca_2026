@@ -4,15 +4,14 @@
 #include <string>
 #include "ITransmisible.h"
 
-using namespace std;
 
 class DispositivoComunicacion : public ITransmisible {
 protected:
-    string iP;
+    std::string iP;
 public:
-    explicit DispositivoComunicacion(const string& iP); //No sé qué hace
-    virtual ~DispositivoComunicacion() = default; //el destructor
-    virtual void transmitir() = 0; // el método que debo heredar para RouterWiFi, gateway y swichfibra
+    explicit DispositivoComunicacion(const std::string& iP); //En el constructor, "explicit" evita conversiones implícitas automáticas
+    virtual ~DispositivoComunicacion() = default; //El destructor virtual 
+    virtual void transmitir() = 0; //El método que heredan las clases RouterWiFi.h, GatewatLoRa.h y SwichFibra.h
     std::string getIp() const;
 };
 
