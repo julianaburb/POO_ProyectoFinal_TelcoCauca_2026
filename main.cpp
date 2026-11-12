@@ -29,7 +29,6 @@
 #include "TelemetriaUDP.h"
 
 int main() {
-    // ===================== PARTE 1: INFRAESTRUCTURA FISICA =====================
     std::cout << "\n==================== PARTE 1: INFRAESTRUCTURA FISICA ====================\n";
 
     Tecnico tecnico1(1, "Carlos Munoz", "Radiofrecuencia");
@@ -39,12 +38,12 @@ int main() {
     Antena antena2(102, 1900.0, "4G");
     Antena antena3(103, 3700.0, "5G");
 
-    // Asociacion 1:1 -> cada antena tiene un tecnico responsable
+    // Asociacion 1:1, cada antena tiene un tecnico responsable
     antena1.asignarResponsable(&tecnico1);
     antena2.asignarResponsable(&tecnico2);
     antena3.asignarResponsable(&tecnico1);
 
-    // Asociacion 1:N -> una torre guarda varias antenas en un std::vector<Antena*>
+    // Asociacion 1:N, una torre guarda varias antenas en un std::vector<Antena*>
     Torre torre(1, "Popayan - Cerro de las Tres Cruces", 45.0);
     torre.agregarAntena(&antena1);
     torre.agregarAntena(&antena2);
@@ -54,7 +53,6 @@ int main() {
     tecnico2.mostrarInformacion();
     torre.mostrarReporteTorre();
 
-    // ===================== PARTE 2: NODO DE RED INTELIGENTE =====================
     std::cout << "\n==================== PARTE 2: NODO DE RED INTELIGENTE ====================\n";
 
     // Primero dos nodos validos. Van en un try porque el constructor puede lanzar ExcepcionNodoRed.
@@ -101,7 +99,6 @@ int main() {
         std::cout << "[Error general] " << e.what() << std::endl;
     }
 
-    // ===================== PARTE 3: POLIMORFISMO Y SUPERVISION EN HILOS =====================
     std::cout << "\n==================== PARTE 3: SUPERVISION POLIMORFICA EN HILOS ====================\n";
 
     // Vector heterogeneo en el Heap: se guardan punteros y no objetos para que no haya slicing
@@ -133,7 +130,7 @@ int main() {
     registrarEventoSeguro("Transmisiones exitosas: " + std::to_string(transmisionesExitosas)
                           + " de " + std::to_string(red.size()) + " dispositivos");
 
-    // ===================== PARTE 4: EVENTOS DE INGENIERIA 2027 =====================
+   
     std::cout << "\n==================== PARTE 4: EVENTOS DE INGENIERIA 2027 ====================\n";
 
     std::vector<EventoIngenieria2027*> agenda;
@@ -163,7 +160,6 @@ int main() {
     hiloEventos.join();
     registrarEventoSeguro("Eventos 2027 registrados: " + std::to_string(eventosMostrados));
 
-    // ===================== PARTE 5: CLIENTE-SERVIDOR TCP =====================
     std::cout << "\n==================== PARTE 5: CLIENTE-SERVIDOR TCP ====================\n";
 
     // El servidor va en su propio hilo porque accept() se queda esperando clientes;
@@ -192,7 +188,6 @@ int main() {
         std::cout << "[runtime_error capturado] " << e.what() << std::endl;
     }
 
-    // ===================== PARTE 6: TELEMETRIA UDP =====================
     std::cout << "\n==================== PARTE 6: TELEMETRIA UDP ====================\n";
 
     // El receptor va en su propio hilo porque recvfrom bloquea mientras espera
@@ -222,8 +217,7 @@ int main() {
     catch (const ExcepcionRedUDP& e) {
         std::cout << "[ExcepcionRedUDP capturada] " << e.what() << std::endl;
     }
-
-    // ===================== LIBERACION DE MEMORIA =====================
+    //La liberacion de memoria 
     // va al final porque la Parte 5 todavia usa red[0] y red[1];
     // ya todos los hilos terminaron, entonces aca si se puede borrar sin problema
     for (std::size_t i = 0; i < red.size(); ++i) {

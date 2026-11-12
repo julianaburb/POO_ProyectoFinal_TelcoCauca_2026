@@ -17,30 +17,30 @@ void ServidorCentral::iniciar() {
    
     if (!iniciarRed()) {
         throw std::runtime_error("Fallo en paso: iniciarRed()");
-    } // 1. Inicializar el subsistema de red (WSAStartup / POSIX)
+    } //Aqui se inicializa el subsistema de red 
 
     socketEscucha = socket(AF_INET, SOCK_STREAM, 0);
     if (socketEscucha == INVALID_SOCKET) {
         throw std::runtime_error("Fallo en paso: socket()");
-    }// 2. Creación del socket TCP
+    }//Creación del socket TCP
 
     sockaddr_in direccionServidor;
     std::memset(&direccionServidor, 0, sizeof(direccionServidor));
     direccionServidor.sin_family = AF_INET;
     direccionServidor.sin_addr.s_addr = INADDR_ANY;
-    direccionServidor.sin_port = htons(PUERTO_TCP); // 3. Configuración del puerto fijo y dirección (INADDR_ANY, PUERTO_TCP=5000)
+    direccionServidor.sin_port = htons(PUERTO_TCP); //Configuración del puerto fijo y dirección 
 
     if (bind(socketEscucha, (struct sockaddr*)&direccionServidor, sizeof(direccionServidor)) == SOCKET_ERROR) {
         cerrarSocket(socketEscucha);
         socketEscucha = INVALID_SOCKET;
         throw std::runtime_error("Fallo en paso: bind()");
-    }  // 4. Enlace del socket a la dirección y puerto (bind)
+    }  //El enlace del socket a la dirección y puerto (bind)
 
     if (listen(socketEscucha, SOMAXCONN) == SOCKET_ERROR) {
         cerrarSocket(socketEscucha);
         socketEscucha = INVALID_SOCKET;
         throw std::runtime_error("Fallo en paso: listen()");
-    }// 5. Poner el socket en modo escucha (listen)
+    }//Poner el socket en modo escucha 
 
     std::cout << "[ServidorCentral] Servidor TCP iniciado correctamente en el puerto " << PUERTO_TCP << std::endl;
 }
@@ -92,7 +92,7 @@ void ServidorCentral::atenderCliente(SocketType cliente) {
 
         buffer[bytesRecibidos] = '\0'; // Asegurar terminador de cadena
 
-        // Deserializacion: separamos la trama TIPO|ID|IP|VALOR por el caracter '|'
+        // Deserializacion, separamos la trama TIPO|ID|IP|VALOR por el caracter '|'
         // con find (busca la posicion del |) y substr (corta el texto entre dos |)
         std::string trama(buffer);
         std::vector<std::string> campos;

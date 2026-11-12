@@ -1,9 +1,9 @@
-#include "ConfigRed.h"     // va primero: trae winsock en Windows o sys/socket en Linux
+#include "ConfigRed.h"     //Jerarquia, va primero
 #include <cstring>
 #include <cerrno>
 #include "TelemetriaUDP.h"
 
-// Codigo del ultimo error de red (en Windows se pide distinto que en Linux)
+// Codigo del ultimo error de red (es el que en Windows se pide distinto que en Linux)
 static int ultimoErrorRed() {
 #ifdef _WIN32
     return WSAGetLastError();
@@ -12,9 +12,6 @@ static int ultimoErrorRed() {
 #endif
 }
 
-// ---------------------------------------------------------------------
-// EMISOR (cliente UDP): sin bind ni connect, solo sendto hacia IP:puerto
-// ---------------------------------------------------------------------
 void enviarTelemetriaUDP(const NodoRedInteligente& nodo) {
     iniciarRed();
 
@@ -30,7 +27,7 @@ void enviarTelemetriaUDP(const NodoRedInteligente& nodo) {
     destino.sin_port = htons(PUERTO_UDP);
     destino.sin_addr.s_addr = inet_addr(IP_SERVIDOR.c_str());
 
-    // Serializacion binaria: copiamos los datos del objeto a la trama empaquetada
+    // Serializacion binaria, osea se copian los datos del objeto a la trama empaquetada
     TramaSensor trama{};
     trama.idNodo = nodo.getIdNodo();
     std::strncpy(trama.tipoSensor, nodo.getTipoSensor().c_str(), sizeof(trama.tipoSensor) - 1);
@@ -46,9 +43,6 @@ void enviarTelemetriaUDP(const NodoRedInteligente& nodo) {
     finalizarRed();
 }
 
-// ---------------------------------------------------------------------
-// RECEPTOR (servidor UDP): bind obligatorio + timeout de 3 s en recvfrom
-// ---------------------------------------------------------------------
 void recibirTelemetriaUDP(int cantidad) {
     iniciarRed();
 
