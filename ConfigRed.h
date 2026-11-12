@@ -33,4 +33,7 @@ void cerrarSocket(SocketType s);
 
 #endif
 
-//En este caso c++11 no tiene sockets nativos en su libreria estandar, aplicamos compilacion condicional para que el proyecto sea multiplataforma
+//En este caso c++11 no tiene sockets nativos en su libreria estandar, 
+//aplicamos compilacion condicional con directivas de preprocesador
+//para que el proyecto sea multiplataforma. Se estandarizan las macros de error
+//para no reescribir còdigo segun el sistema operativo

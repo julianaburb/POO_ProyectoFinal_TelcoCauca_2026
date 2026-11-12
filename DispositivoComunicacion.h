@@ -9,7 +9,9 @@ class DispositivoComunicacion : public ITransmisible {
 protected:
     std::string iP;
 public:
-    explicit DispositivoComunicacion(const std::string& iP); //En el constructor, "explicit" evita conversiones implícitas automáticas
+    explicit DispositivoComunicacion(const std::string& iP); 
+    //En el constructor, "explicit" evita conversiones implícitas automáticas de un std::string
+    //evitando instanciaciones implìcitas
     virtual ~DispositivoComunicacion() = default; //El destructor virtual 
     virtual void transmitir() = 0; //El método que heredan las clases RouterWiFi.h, GatewatLoRa.h y SwichFibra.h
     std::string getIp() const;

@@ -2,7 +2,7 @@
 #define ITRANSMISIBLE_H
 #include <string>
 
-class ITransmisible {
+class ITransmisible { //interfaz pura
 public:
     //Metodo virtual puro que obliga a las hijas a implementar la serializacion
     //es const porque solo puede leer los atributos del objeto, no cambiarlos,
