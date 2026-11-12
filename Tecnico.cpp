@@ -1,5 +1,6 @@
 #include "Tecnico.h"
 #include <string>
+
 using namespace std;
 
 Tecnico::Tecnico (int _idTecnico, const std::string &_nombre, const std::string &_esp)
@@ -12,9 +13,11 @@ void Tecnico::mostrarInformacion() const {
 void Tecnico::setIdTecnico (int nuevoIdTecnico){
     this->idTecnico = nuevoIdTecnico;
 }
+
 void Tecnico::setNombre (const std::string &nuevoNombre){
     this->nombre = nuevoNombre;
 }
+
 void Tecnico::setEspecialidad (const std::string &nuevaEspecialidad){
     this->especialidad = nuevaEspecialidad;
 }

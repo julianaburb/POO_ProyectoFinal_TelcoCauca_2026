@@ -4,7 +4,7 @@
 #include <string>
 #include <iostream>
 
-class Tecnico; 
+class Tecnico; //forward declaration, evita dependencia circular 
 
 class Antena {
 private:

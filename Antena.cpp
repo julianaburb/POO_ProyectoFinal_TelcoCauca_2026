@@ -5,7 +5,7 @@ Antena::Antena(int _id, double _freq, const std::string& _tec)
     : idAntena(_id), frecuenciaMHz(_freq), tecnologia(_tec), responsableMantenimiento(nullptr) {}
 
 void Antena::asignarResponsable(Tecnico* t) {
-    if (t != nullptr) {
+    if (t != nullptr) { //la guarda defensiva
     responsableMantenimiento = t;
     }
 }

@@ -3,7 +3,7 @@
 
 #include "DispositivoComunicacion.h"
 
-class SwitchFibra : public DispositivoComunicacion {
+class SwitchFibra : public DispositivoComunicacion { //clase que hereda de clase DispositivoComunicacion
 public:
     explicit SwitchFibra(const std::string& iP);
     ~SwitchFibra() override = default;

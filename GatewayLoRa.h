@@ -3,7 +3,7 @@
 
 #include "DispositivoComunicacion.h"
 
-class GatewayLoRa : public DispositivoComunicacion {
+class GatewayLoRa : public DispositivoComunicacion { //clase que hereda de clase DispositivoComunicacion
 public:
     explicit GatewayLoRa(const std::string& iP);
     ~GatewayLoRa() override = default;
