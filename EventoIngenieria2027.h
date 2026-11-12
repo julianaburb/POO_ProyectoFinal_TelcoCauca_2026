@@ -11,7 +11,7 @@ private:
     std::string fecha;
     std::string lugar;
     std::string enfoque;   // de que trata el evento
-    int anio;
+    int anio; 
 public:
     EventoIngenieria2027(const std::string& _nombre, const std::string& _fecha,
                          const std::string& _lugar, const std::string& _enfoque, int _anio);

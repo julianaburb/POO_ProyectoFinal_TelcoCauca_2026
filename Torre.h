@@ -4,8 +4,7 @@
 #include <string>
 #include <vector>
 
-
-class Antena;
+class Antena; //forward declaration, evita dependencia circular 
 
 class Torre {
 private:

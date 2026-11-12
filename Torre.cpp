@@ -9,7 +9,7 @@ void Torre::agregarAntena(Antena* a) {
     if (a != nullptr) {
         listaAntenas.push_back(a);
     }
-}
+} 
 
 
 int Torre::contarAntenas5G() const { // escribo el cuerpo del metodo pedido
