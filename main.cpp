@@ -99,39 +99,15 @@ int main() {
         std::cout << "[Error general] " << e.what() << std::endl;
     }
 
-    std::cout << "\n==================== PARTE 3: SUPERVISION POLIMORFICA EN HILOS ====================\n";
+    std::cout << "\n==================== PARTE 3 Y 4: SUPERVISION POLIMORFICA + EVENTOS 2027 (HILOS EN PARALELO) ====================\n";
 
-    // Vector heterogeneo en el Heap: se guardan punteros y no objetos para que no haya slicing
+    // vector de punteros a la clase base, con punteros para que no haya slicing
     std::vector<DispositivoComunicacion*> red;
     red.push_back(new RouterWiFi("192.168.10.1"));
     red.push_back(new GatewayLoRa("192.168.10.2"));
     red.push_back(new SwitchFibra("192.168.10.3"));
-    red.push_back(new RouterWiFi(""));   // Provocacion: IP vacia -> ExcepcionNodoRed dentro del hilo
-    red.push_back(nullptr);              // Provocacion: puntero nulo -> guarda defensiva (invalid_argument)
-
-    // Variable compartida entre hilos (se modifica dentro de la seccion protegida con mutex)
-    int transmisionesExitosas = 0;
-    SupervisorRed supervisor;
-
-    // Un hilo por dispositivo con la sintaxis de funcion miembro: (&Clase::metodo, &instancia, args)
-    // sin std::ref el hilo trabaja con una copia y el contador del main se queda en 0
-    std::vector<std::thread> hilosSupervision;
-    for (DispositivoComunicacion* dev : red) {
-        hilosSupervision.push_back(std::thread(&SupervisorRed::supervisar, &supervisor, dev,
-                                               std::ref(transmisionesExitosas)));
-    }
-
-    // Sincronizacion obligatoria: si un hilo queda joinable al destruirse, el programa se cae con terminate()
-    for (auto& t : hilosSupervision) {
-        if (t.joinable()) {
-            t.join();
-        }
-    }
-    registrarEventoSeguro("Transmisiones exitosas: " + std::to_string(transmisionesExitosas)
-                          + " de " + std::to_string(red.size()) + " dispositivos");
-
-   
-    std::cout << "\n==================== PARTE 4: EVENTOS DE INGENIERIA 2027 ====================\n";
+    red.push_back(new RouterWiFi(""));   // IP vacia a proposito -> ExcepcionNodoRed en el hilo
+    red.push_back(nullptr);              // puntero nulo a proposito -> invalid_argument en el hilo
 
     std::vector<EventoIngenieria2027*> agenda;
     agenda.push_back(new EventoIngenieria2027(
@@ -153,31 +129,73 @@ int main() {
         "Transformacion de operadores: IA, OpenRAN, automatizacion de redes, IoT, nube y ciberseguridad",
         2027));
 
-    int eventosMostrados = 0;
+    int transmisionesExitosas = 0;   // lo tocan todos los hilos de supervision (protegido con mtx_contador)
+    int eventosMostrados = 0;        // solo lo toca el hilo de eventos
+    SupervisorRed supervisor;
 
-    // La agenda corre en su propio hilo independiente, como pide la guia
+    // la agenda arranca primero en su propio hilo y corre al mismo tiempo que la supervision
     std::thread hiloEventos(procesarAgendaEventos2027, std::ref(agenda), std::ref(eventosMostrados));
+
+    // un hilo por dispositivo: (&Clase::metodo, &instancia, parametros)
+    // con std::ref el hilo modifica el contador del main y no una copia
+    std::vector<std::thread> hilosSupervision;
+    for (DispositivoComunicacion* dev : red) {
+        hilosSupervision.push_back(std::thread(&SupervisorRed::supervisar, &supervisor, dev,
+                                               std::ref(transmisionesExitosas)));
+    }
+
+    // join a todos antes de seguir (si un thread se destruye sin join el programa se cae)
+    for (auto& t : hilosSupervision) {
+        if (t.joinable()) {
+            t.join();
+        }
+    }
     hiloEventos.join();
+
+    registrarEventoSeguro("Transmisiones exitosas: " + std::to_string(transmisionesExitosas)
+                          + " de " + std::to_string(red.size()) + " dispositivos");
     registrarEventoSeguro("Eventos 2027 registrados: " + std::to_string(eventosMostrados));
 
     std::cout << "\n==================== PARTE 5: CLIENTE-SERVIDOR TCP ====================\n";
 
-    // El servidor va en su propio hilo porque accept() se queda esperando clientes;
-    // si lo llamaramos directo, el programa se bloquearia y los clientes nunca se ejecutarian.
+    // el servidor va en un hilo porque accept() bloquea esperando clientes
     std::thread hiloServidor(iniciarServidorTCP);
     std::this_thread::sleep_for(std::chrono::milliseconds(500));   // tiempo para socket, bind y listen
 
-    // 3 clientes (MAX_CLIENTES = 3): cada uno se conecta, manda su trama serializada y espera el ACK
+    // tramas de los 3 clientes: el nodo inteligente, el router y el gateway
+    std::vector<std::string> tramas;
     try {
         NodoRedInteligente nodoEstacion("192.168.1.20", "AA:BB:CC:DD:EE:01", true, "Temperatura", 35.5, 1, 120, 40.0);
-        enviarTramaTCP(nodoEstacion.serializar());   // trama del nodo inteligente
-        enviarTramaTCP(red[0]->serializar());        // trama del RouterWiFi (polimorfismo via ITransmisible)
-        enviarTramaTCP(red[1]->serializar());        // trama del GatewayLoRa
+        tramas.push_back(nodoEstacion.serializar());
     }
     catch (const std::exception& e) {
-        std::cout << "[Error cliente TCP] " << e.what() << std::endl;
+        registrarEventoSeguro(std::string("[Error creando nodo] ") + e.what());
     }
-    hiloServidor.join();   // el servidor termina despues de atender a los 3 clientes
+    for (std::size_t i = 0; i < 2 && i < red.size(); ++i) {
+        if (red[i] != nullptr) {                       // misma guarda contra nullptr de la Parte 3
+            tramas.push_back(red[i]->serializar());    // serializar() es el metodo de ITransmisible
+        }
+    }
+
+    // cada cliente en su propio hilo, los 3 se conectan al mismo tiempo
+    // y el servidor tiene que atenderlos en paralelo (un hilo por cliente)
+    std::vector<std::thread> hilosClientes;
+    for (const std::string& t : tramas) {
+        hilosClientes.push_back(std::thread([t]() {
+            try {
+                enviarTramaTCP(t);
+            }
+            catch (const std::exception& e) {
+                registrarEventoSeguro(std::string("[Error cliente TCP] ") + e.what());
+            }
+        }));
+    }
+    for (auto& h : hilosClientes) {
+        if (h.joinable()) {
+            h.join();
+        }
+    }
+    hiloServidor.join();   // el servidor termina despues de atender a los clientes
 
     // Error forzado: el servidor ya se apago, asi que el connect debe fallar y capturarse
     std::cout << "\n> Error forzado: cliente intentando conectarse sin servidor\n";
@@ -190,11 +208,11 @@ int main() {
 
     std::cout << "\n==================== PARTE 6: TELEMETRIA UDP ====================\n";
 
-    // El receptor va en su propio hilo porque recvfrom bloquea mientras espera
+    // el receptor va en un hilo porque recvfrom bloquea mientras espera
     std::thread hiloReceptor([]() {
         try { recibirTelemetriaUDP(2); }
-        catch (const ExcepcionRedUDP& e) { std::cout << "[ExcepcionRedUDP] " << e.what() << std::endl; }
-        catch (const std::exception& e)  { std::cout << "[Error general] " << e.what() << std::endl; }
+        catch (const ExcepcionRedUDP& e) { registrarEventoSeguro(std::string("[ExcepcionRedUDP] ") + e.what()); }
+        catch (const std::exception& e)  { registrarEventoSeguro(std::string("[Error general] ") + e.what()); }
     });
     std::this_thread::sleep_for(std::chrono::milliseconds(500));   // tiempo para el bind
 
@@ -205,7 +223,7 @@ int main() {
         enviarTelemetriaUDP(sensor2);
     }
     catch (const std::exception& e) {
-        std::cout << "[Error emisor UDP] " << e.what() << std::endl;
+        registrarEventoSeguro(std::string("[Error emisor UDP] ") + e.what());
     }
     hiloReceptor.join();
 
@@ -217,14 +235,13 @@ int main() {
     catch (const ExcepcionRedUDP& e) {
         std::cout << "[ExcepcionRedUDP capturada] " << e.what() << std::endl;
     }
-    //La liberacion de memoria 
-    // va al final porque la Parte 5 todavia usa red[0] y red[1];
-    // ya todos los hilos terminaron, entonces aca si se puede borrar sin problema
+    // liberar memoria al final, porque la Parte 5 todavia usa red[0] y red[1]
+    // y aca ya terminaron todos los hilos
     for (std::size_t i = 0; i < red.size(); ++i) {
         if (red[i] != nullptr) {
-            delete red[i];   // destructor virtual -> se llama tambien el de la clase hija
+            delete red[i];   // como el destructor es virtual, tambien se llama el de la hija
         }
-        red[i] = nullptr;    // para no dejar punteros colgantes
+        red[i] = nullptr;
     }
     red.clear();
 

@@ -5,10 +5,8 @@
 #include <string>
 
 class ExcepcionNodoRed : public std::runtime_error {
-    public:
-    // explicit: evita que un std::string se convierta implícitamente en una
-    // ExcepcionNodoRed; la excepción solo se crea de forma intencional
-        explicit ExcepcionNodoRed(const std::string& mensaje);
+public:
+    explicit ExcepcionNodoRed(const std::string& mensaje);
 };
 
 #endif

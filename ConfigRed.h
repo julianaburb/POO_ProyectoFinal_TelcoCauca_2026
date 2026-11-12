@@ -4,13 +4,15 @@
 #include <iostream>
 #include <string>
 
-// Selección de cabeceras y tipos según el Sistema Operativo
+// C++11 no trae sockets, entonces se incluyen los de Windows o los de Linux
+// segun el sistema donde se compile
 #ifdef _WIN32
     #include <winsock2.h>
     #include <ws2tcpip.h>
     typedef SOCKET SocketType;
 #else
     #include <sys/socket.h>
+    #include <sys/select.h>
     #include <arpa/inet.h>
     #include <netinet/in.h>
     #include <unistd.h>
@@ -19,21 +21,14 @@
     #define SOCKET_ERROR -1
 #endif
 
-//El formato que se usa es TIPO|ID|IP|VALOR
+// formato de las tramas: TIPO|ID|IP|VALOR
 
-//Estas son las constantes globales de configuración de red
 const std::string IP_SERVIDOR = "127.0.0.1";
 const int PUERTO_TCP = 5000;
 const int PUERTO_UDP = 5001;
 
-//Funciones de abstracción de socket multiplataforma
 bool iniciarRed();
 void finalizarRed();
 void cerrarSocket(SocketType s);
 
 #endif
-
-//En este caso c++11 no tiene sockets nativos en su libreria estandar, 
-//aplicamos compilacion condicional con directivas de preprocesador
-//para que el proyecto sea multiplataforma. Se estandarizan las macros de error
-//para no reescribir còdigo segun el sistema operativo

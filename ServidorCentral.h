@@ -7,12 +7,12 @@
 #include <stdexcept>
 #include "ConfigRed.h"
 
-const int MAX_CLIENTES = 3; // Límite de conexiones p la demostración limpia
+const int MAX_CLIENTES = 3;          // clientes que atiende en la demo
+const int ESPERA_ACCEPT_SEG = 5;     // si en 5 s no llega nadie, el servidor deja de esperar
 
 class ServidorCentral {
 private:
     SocketType socketEscucha;
-    std::mutex mtxConsolaServidor;
 
 public:
     ServidorCentral();
@@ -20,9 +20,9 @@ public:
 
     void iniciar();
     void aceptarClientes();
-    void atenderCliente(SocketType cliente); //punto 5
+    void atenderCliente(SocketType cliente); // corre en un hilo por cada cliente
 };
 
-void iniciarServidorTCP();// Función de la opción 5 del menú (iniciarServidorTCP)
+void iniciarServidorTCP(); // crea el servidor, lo inicia y acepta clientes (se lanza en un hilo desde el main)
 
-#endif 
+#endif

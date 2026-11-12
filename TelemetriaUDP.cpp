@@ -1,9 +1,11 @@
-#include "ConfigRed.h"     //Jerarquia, va primero
+#include "ConfigRed.h"     // va primero por los includes de sockets
 #include <cstring>
 #include <cerrno>
+#include <mutex>
 #include "TelemetriaUDP.h"
+#include "Registro.h"      // mtx_consola: emisor y receptor imprimen desde hilos distintos
 
-// Codigo del ultimo error de red (es el que en Windows se pide distinto que en Linux)
+// codigo del ultimo error de red (en Windows y en Linux se pide distinto)
 static int ultimoErrorRed() {
 #ifdef _WIN32
     return WSAGetLastError();
@@ -13,7 +15,8 @@ static int ultimoErrorRed() {
 }
 
 void enviarTelemetriaUDP(const NodoRedInteligente& nodo) {
-    iniciarRed();
+    if (!iniciarRed())
+        throw ExcepcionRedUDP("UDP: no se pudo iniciar la red", ultimoErrorRed());
 
     SocketType s = socket(AF_INET, SOCK_DGRAM, 0);   // SOCK_DGRAM = UDP
     if (s == INVALID_SOCKET) {
@@ -27,24 +30,33 @@ void enviarTelemetriaUDP(const NodoRedInteligente& nodo) {
     destino.sin_port = htons(PUERTO_UDP);
     destino.sin_addr.s_addr = inet_addr(IP_SERVIDOR.c_str());
 
-    // Serializacion binaria, osea se copian los datos del objeto a la trama empaquetada
+    // se copian los datos del nodo a la trama
     TramaSensor trama{};
     trama.idNodo = nodo.getIdNodo();
     std::strncpy(trama.tipoSensor, nodo.getTipoSensor().c_str(), sizeof(trama.tipoSensor) - 1);
     trama.valorLectura = (float)nodo.getValorLectura();
     std::strncpy(trama.direccionIP, nodo.getDireccionIP().c_str(), sizeof(trama.direccionIP) - 1);
 
-    sendto(s, reinterpret_cast<const char*>(&trama), sizeof(trama), 0,
-           (sockaddr*)&destino, sizeof(destino));
-    std::cout << "[UDP TX] Nodo " << trama.idNodo << " envio " << sizeof(trama)
-              << " bytes (" << trama.tipoSensor << ": " << trama.valorLectura << ")" << std::endl;
+    if (sendto(s, reinterpret_cast<const char*>(&trama), sizeof(trama), 0,
+               (sockaddr*)&destino, sizeof(destino)) == SOCKET_ERROR) {
+        int err = ultimoErrorRed();
+        cerrarSocket(s);
+        finalizarRed();
+        throw ExcepcionRedUDP("UDP: fallo el sendto", err);
+    }
+    {
+        std::lock_guard<std::mutex> lock(mtx_consola);
+        std::cout << "[UDP TX] Nodo " << trama.idNodo << " envio " << sizeof(trama)
+                  << " bytes (" << trama.tipoSensor << ": " << trama.valorLectura << ")" << std::endl;
+    }
 
     cerrarSocket(s);
     finalizarRed();
 }
 
 void recibirTelemetriaUDP(int cantidad) {
-    iniciarRed();
+    if (!iniciarRed())
+        throw ExcepcionRedUDP("UDP: no se pudo iniciar la red", ultimoErrorRed());
 
     SocketType s = socket(AF_INET, SOCK_DGRAM, 0);
     if (s == INVALID_SOCKET) {
@@ -65,16 +77,24 @@ void recibirTelemetriaUDP(int cantidad) {
         throw ExcepcionRedUDP("UDP: fallo el bind, el puerto puede estar ocupado", err);
     }
 
-    // Timeout de 3 s para que recvfrom no se quede bloqueado para siempre
+    // timeout de 3 s para que recvfrom no se quede bloqueado
 #ifdef _WIN32
-    DWORD timeout = 3000;                       // Windows: milisegundos
+    DWORD timeout = 3000;                       // en Windows va en milisegundos
 #else
-    struct timeval timeout{3, 0};               // Linux: segundos, como en la diapositiva
+    struct timeval timeout{3, 0};               // en Linux va en segundos
 #endif
-    setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout));
+    if (setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout)) == SOCKET_ERROR) {
+        int err = ultimoErrorRed();
+        cerrarSocket(s);
+        finalizarRed();
+        throw ExcepcionRedUDP("UDP: no se pudo configurar el timeout", err);
+    }
 
-    std::cout << "[UDP RX] Escuchando en el puerto " << PUERTO_UDP
-              << " (trama de " << sizeof(TramaSensor) << " bytes)..." << std::endl;
+    {
+        std::lock_guard<std::mutex> lock(mtx_consola);
+        std::cout << "[UDP RX] Escuchando en el puerto " << PUERTO_UDP
+                  << " (trama de " << sizeof(TramaSensor) << " bytes)..." << std::endl;
+    }
 
     for (int i = 0; i < cantidad; i++) {
         TramaSensor recibida{};
@@ -93,6 +113,7 @@ void recibirTelemetriaUDP(int cantidad) {
             throw ExcepcionRedUDP("TIMEOUT o error: no se recibio datagrama en 3 s", err);
         }
         if (bytes == sizeof(TramaSensor)) {   // solo si llego completa
+            std::lock_guard<std::mutex> lock(mtx_consola);
             std::cout << "[UDP RX] Nodo " << recibida.idNodo << " | IP " << recibida.direccionIP
                       << " | " << recibida.tipoSensor << ": " << recibida.valorLectura << std::endl;
         }

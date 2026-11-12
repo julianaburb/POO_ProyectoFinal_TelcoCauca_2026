@@ -1,6 +1,8 @@
 #include "ConfigRed.h"     // de aqui salen IP_SERVIDOR, PUERTO_TCP, SocketType y las funciones de red
 #include <stdexcept>
+#include <mutex>
 #include "ClienteTCP.h"
+#include "Registro.h"      // mtx_consola, porque el servidor imprime al mismo tiempo desde otros hilos
 
 //Cliente TCP (estacion base), el orden es socket -> connect -> send -> recv -> cerrar
 void enviarTramaTCP(const std::string& trama) {
@@ -26,18 +28,28 @@ void enviarTramaTCP(const std::string& trama) {
         throw std::runtime_error("TCP cliente: no se pudo conectar al ServidorCentral");
     }
 
-    send(s, trama.c_str(), (int)trama.size(), 0);
-    std::cout << "[TCP cliente] Trama enviada: " << trama << std::endl; //Se envia la trama serializada con el formato TIPO|ID|IP|VALOR
+    if (send(s, trama.c_str(), (int)trama.size(), 0) == SOCKET_ERROR) {
+        cerrarSocket(s);
+        finalizarRed();
+        throw std::runtime_error("TCP cliente: no se pudo enviar la trama");
+    }
+    {
+        std::lock_guard<std::mutex> lock(mtx_consola);
+        std::cout << "[TCP cliente] Trama enviada: " << trama << std::endl;
+    }
 
     char buffer[64];
-    int bytes = recv(s, buffer, sizeof(buffer) - 1, 0);  //Esperamos la respuesta (ACK) recv, devuelve 0 si el servidor cierra la conexion
+    int bytes = recv(s, buffer, sizeof(buffer) - 1, 0);  //se espera el ACK, recv devuelve 0 si el servidor cierra la conexion
     if (bytes <= 0) {
         cerrarSocket(s);
         finalizarRed();
         throw std::runtime_error("TCP cliente: el servidor no respondio");
     }
     buffer[bytes] = '\0';   //terminador nulo antes de imprimir
-    std::cout << "[TCP cliente] Respuesta del servidor: " << buffer << std::endl;
+    {
+        std::lock_guard<std::mutex> lock(mtx_consola);
+        std::cout << "[TCP cliente] Respuesta del servidor a '" << trama << "': " << buffer << std::endl;
+    }
 
     cerrarSocket(s);
     finalizarRed();

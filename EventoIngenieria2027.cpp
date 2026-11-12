@@ -52,7 +52,7 @@ void procesarAgendaEventos2027(const std::vector<EventoIngenieria2027*>& agenda,
                 registrarEventoSeguro(std::string("[Fuera de Rango] EXCEPCION EN HILO DE EVENTOS: ") + e.what());
             }
 
-            // pausa breve para que se note que corre a la par con los otros hilos
+            // pausa para que se vea que se intercala con los hilos de supervision
             std::this_thread::sleep_for(std::chrono::milliseconds(50));
         }
     }

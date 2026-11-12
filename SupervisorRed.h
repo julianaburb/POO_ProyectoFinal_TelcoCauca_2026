@@ -3,12 +3,10 @@
 
 #include "DispositivoComunicacion.h"
 
-using namespace std;
-
 class SupervisorRed {
 public:
     SupervisorRed() = default;
     void supervisar(DispositivoComunicacion* dev, int& transmisionesExitosas);
 };
 
-#endif 
+#endif

@@ -11,7 +11,7 @@ private:
     std::string fecha;
     std::string lugar;
     std::string enfoque;   // de que trata el evento
-    int anio; 
+    int anio;
 public:
     EventoIngenieria2027(const std::string& _nombre, const std::string& _fecha,
                          const std::string& _lugar, const std::string& _enfoque, int _anio);
@@ -24,8 +24,7 @@ public:
     std::string resumen() const;
 };
 
-// Funcion que corre en un hilo aparte: recorre la agenda y la muestra con el mutex.
-// La agenda y el contador llegan por referencia, en el main se pasan con std::ref
+// corre en su propio hilo. agenda y contador llegan por referencia (std::ref en el main)
 void procesarAgendaEventos2027(const std::vector<EventoIngenieria2027*>& agenda, int& eventosMostrados);
 
 #endif
